@@ -378,7 +378,7 @@ export default function MiAlbumPage() {
 
             <main className="
                 max-w-lg mx-auto px-4 pt-20 pb-24
-                lg:ml-64 lg:mr-0 lg:max-w-none lg:pt-8 lg:px-8 lg:pb-8
+                lg:ml-64 lg:mr-0 lg:max-w-none lg:pt-8 lg:px-12 lg:pb-8
                 xl:mr-72
             ">
                 {/* Header */}
