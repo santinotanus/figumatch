@@ -4,7 +4,7 @@
  * Usamos un módulo singleton para compartir estado entre páginas.
  */
 
-import { OfertaCompleta, EstadoOferta } from "@/types";
+import { OfertaCompleta, EstadoOferta, Encuentro } from "@/types";
 
 // ─── Mock data — ofertas iniciales ────────────────────────────────────────────
 let _ofertas: OfertaCompleta[] = [
@@ -64,7 +64,14 @@ let _ofertas: OfertaCompleta[] = [
         figuritasQueRecibo: ["ENG-2"],
         figuritasQueEntrego: ["FRA-1"],
         estado: "activa",
-        fecha: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+        fecha: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        encuentro: {
+            lugar: "Starbucks Mendoza Centro",
+            fecha: "2026-02-22",
+            hora: "17:30",
+            propuestoPor: "ellos",
+            aceptado: false,
+        },
     },
     {
         id: "o6",
@@ -75,7 +82,7 @@ let _ofertas: OfertaCompleta[] = [
         figuritasQueRecibo: ["ESP-LOGO"],
         figuritasQueEntrego: ["ESP-1"],
         estado: "activa",
-        fecha: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
+        fecha: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
     },
 ];
 
@@ -114,4 +121,18 @@ export function addOferta(oferta: Omit<OfertaCompleta, "id" | "fecha">): OfertaC
     };
     _ofertas = [nueva, ..._ofertas];
     return nueva;
+}
+
+export function setEncuentro(id: string, encuentro: Encuentro): void {
+    _ofertas = _ofertas.map(o =>
+        o.id === id ? { ...o, encuentro } : o
+    );
+}
+
+export function aceptarEncuentro(id: string): void {
+    _ofertas = _ofertas.map(o =>
+        o.id === id && o.encuentro
+            ? { ...o, encuentro: { ...o.encuentro, aceptado: true } }
+            : o
+    );
 }

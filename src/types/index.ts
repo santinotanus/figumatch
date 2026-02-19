@@ -33,6 +33,14 @@ export interface Oferta {
 
 export type EstadoOferta = "pendiente_yo" | "pendiente_ellos" | "activa" | "rechazada" | "cancelada";
 
+export interface Encuentro {
+    lugar: string;
+    fecha: string;       // "2026-02-20"
+    hora: string;        // "17:30"
+    propuestoPor: "yo" | "ellos";
+    aceptado: boolean;
+}
+
 export interface OfertaCompleta {
     id: string;
     usuarioId: string;         // El otro usuario
@@ -43,6 +51,7 @@ export interface OfertaCompleta {
     figuritasQueEntrego: string[]; // IDs que YO entrego
     estado: EstadoOferta;
     fecha: string;             // ISO date string
+    encuentro?: Encuentro;     // Datos del encuentro físico
 }
 
 // Configuración de precio especial para una figurita repetida

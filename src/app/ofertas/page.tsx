@@ -106,6 +106,21 @@ function DetailModal({
                         </div>
                         {esActiva && <div className="text-2xl flex-shrink-0">🤝</div>}
                     </div>
+
+                    {/* Encuentro preview — solo si hay datos confirmados */}
+                    {esActiva && oferta.encuentro && (
+                        <div className="mt-3 bg-white/15 rounded-xl px-4 py-3 flex items-center gap-3">
+                            <div className="text-xl flex-shrink-0">📍</div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-white font-bold text-sm truncate">{oferta.encuentro.lugar}</p>
+                                <p className="text-white/70 text-xs mt-0.5">
+                                    {new Date(oferta.encuentro.fecha + "T12:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}
+                                    {" · "}{oferta.encuentro.hora} hs
+                                </p>
+                            </div>
+                            <span className="bg-emerald-400 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0">COORD.</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="px-5 py-4">
@@ -245,16 +260,24 @@ function DetailModal({
                                 </>
                             )}
                             {esActiva && (
-                                <button onClick={onClose}
-                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-black text-sm shadow-md shadow-emerald-200 flex items-center justify-center gap-2">
-                                    <span>🤝</span> Intercambio confirmado
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        router.push(`/intercambio/${oferta.id}`);
+                                    }}
+                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-black text-sm shadow-md shadow-emerald-200 flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-emerald-700 transition-all active:scale-[0.98]"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Gestionar intercambio
                                 </button>
                             )}
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
