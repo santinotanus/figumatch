@@ -383,7 +383,7 @@ export default function MiAlbumPage() {
             ">
                 {/* Header */}
                 <div className="mb-5 mt-2">
-                    <h1 className="text-2xl font-black text-gray-900">Mi Álbum</h1>
+                    <h1 className="text-2xl font-black text-gray-900">📒 Mi Álbum</h1>
                     <p className="text-sm text-gray-400 mt-0.5">
                         Gestioná tus figuritas repetidas y las que te faltan
                     </p>

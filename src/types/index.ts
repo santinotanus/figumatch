@@ -12,6 +12,7 @@ export interface Usuario {
     ciudad: string;
     avatar: string;
     foto?: string;         // URL de foto de perfil (opcional)
+    premium?: boolean;     // Usuario premium
     repetidas: string[]; // IDs de figuritas repetidas
     faltantes: string[]; // IDs de figuritas faltantes
     zonas?: string[];    // Hasta 3 zonas de encuentro
@@ -37,6 +38,7 @@ export interface Encuentro {
     lugar: string;
     fecha: string;       // "2026-02-20"
     hora: string;        // "17:30"
+    comentario?: string; // Aclaración adicional (ej: "en la entrada del Patio Bullrich")
     propuestoPor: "yo" | "ellos";
     aceptado: boolean;
 }

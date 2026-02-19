@@ -101,25 +101,7 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            {/* User profile at bottom */}
-            <div className="mt-auto pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm">
-                        {MI_USUARIO.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{MI_USUARIO.nombre}</p>
-                        <p className="text-xs text-gray-400 truncate">{MI_USUARIO.ciudad}</p>
-                    </div>
-                    <button className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
-                    </button>
-                </div>
-            </div>
+
         </aside>
     );
 }

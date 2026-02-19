@@ -79,6 +79,7 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
     const tengo = TOTAL_FIGURITAS - faltantes.length;
     const progreso = Math.round((tengo / TOTAL_FIGURITAS) * 100);
     const initials = usuario.avatar;
+    const isPremium = usuario.premium === true;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -103,36 +104,77 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
                     </button>
 
                     {/* ── Hero card ── */}
-                    <div className="bg-gradient-to-br from-sky-500 via-sky-600 to-sky-700 rounded-3xl p-6 mb-5 shadow-xl shadow-sky-200 relative overflow-hidden">
+                    <div className={`
+                        rounded-3xl p-6 mb-5 relative overflow-hidden
+                        ${isPremium
+                            ? "bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 shadow-md shadow-amber-200"
+                            : "bg-gradient-to-br from-sky-500 via-sky-600 to-sky-700 shadow-xl shadow-sky-200"
+                        }
+                    `}>
                         <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
                         <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/5 rounded-full" />
 
+                        {/* Premium shimmer bar */}
+                        {isPremium && (
+                            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl bg-gradient-to-r from-white/60 via-yellow-200/80 to-white/60" />
+                        )}
+
                         <div className="relative flex items-center gap-5">
                             {/* Avatar */}
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-300 to-sky-500 flex items-center justify-center shadow-lg ring-4 ring-white/30 flex-shrink-0">
-                                <span className="text-white font-black text-2xl">{initials}</span>
+                            <div className="relative flex-shrink-0">
+                                <div className={`
+                                    w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg
+                                    ${isPremium
+                                        ? "bg-gradient-to-br from-yellow-200 to-amber-300 ring-4 ring-white/50"
+                                        : "bg-gradient-to-br from-sky-300 to-sky-500 ring-4 ring-white/30"
+                                    }
+                                `}>
+                                    <span className={`font-black text-2xl ${isPremium ? "text-amber-900" : "text-white"}`}>
+                                        {initials}
+                                    </span>
+                                </div>
+                                {isPremium && (
+                                    <span className="absolute -top-2.5 -right-1.5 text-[18px] leading-none select-none">👑</span>
+                                )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h1 className="text-white font-black text-xl leading-tight truncate mb-0.5">
-                                    {usuario.nombre}
-                                </h1>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                    <h1 className={`font-black text-xl leading-tight truncate ${isPremium ? "text-amber-900" : "text-white"}`}>
+                                        {usuario.nombre}
+                                    </h1>
+                                    {/* Blue premium checkmark */}
+                                    {isPremium && (
+                                        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="12" r="12" fill="#3B82F6" />
+                                            <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    )}
+                                </div>
+
+                                {/* Premium label */}
+                                {isPremium && (
+                                    <div className="inline-flex items-center gap-1 bg-white/30 rounded-full px-2.5 py-0.5 mb-2">
+                                        <span className="text-[10px] font-black text-amber-900 uppercase tracking-wide">⭐ Cuenta Premium</span>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center gap-1 mb-3">
-                                    <svg className="w-3.5 h-3.5 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className={`w-3.5 h-3.5 ${isPremium ? "text-amber-700" : "text-sky-200"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <span className="text-sky-100 text-sm">{usuario.ciudad}</span>
+                                    <span className={`text-sm ${isPremium ? "text-amber-800" : "text-sky-100"}`}>{usuario.ciudad}</span>
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-white/15 rounded-xl px-3 py-1.5 text-center">
-                                        <div className="text-white font-black text-lg leading-none">{cambios}</div>
-                                        <div className="text-sky-100 text-[9px] font-bold uppercase tracking-wide mt-0.5">cambios</div>
+                                    <div className="bg-white/20 rounded-xl px-3 py-1.5 text-center">
+                                        <div className={`font-black text-lg leading-none ${isPremium ? "text-amber-900" : "text-white"}`}>{cambios}</div>
+                                        <div className={`text-[9px] font-bold uppercase tracking-wide mt-0.5 ${isPremium ? "text-amber-700" : "text-sky-100"}`}>cambios</div>
                                     </div>
-                                    <div className="bg-white/15 rounded-xl px-3 py-1.5 text-center">
-                                        <div className="text-amber-300 font-black text-lg leading-none">{rep.toFixed(1)}</div>
-                                        <div className="text-sky-100 text-[9px] font-bold uppercase tracking-wide mt-0.5">reputación</div>
+                                    <div className="bg-white/20 rounded-xl px-3 py-1.5 text-center">
+                                        <div className={`font-black text-lg leading-none ${isPremium ? "text-amber-900" : "text-amber-300"}`}>{rep.toFixed(1)}</div>
+                                        <div className={`text-[9px] font-bold uppercase tracking-wide mt-0.5 ${isPremium ? "text-amber-700" : "text-sky-100"}`}>reputación</div>
                                     </div>
                                 </div>
                             </div>

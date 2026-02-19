@@ -470,7 +470,7 @@ export default function OfertasPage() {
                 <div className="max-w-lg mx-auto lg:max-w-2xl lg:mx-auto">
                     {/* Header */}
                     <div className="mb-5 mt-2">
-                        <h1 className="text-2xl font-black text-gray-900">Mis Ofertas</h1>
+                        <h1 className="text-2xl font-black text-gray-900">🔄 Mis Ofertas</h1>
                         <p className="text-sm text-gray-400 mt-0.5">Gestioná tus intercambios</p>
                     </div>
 

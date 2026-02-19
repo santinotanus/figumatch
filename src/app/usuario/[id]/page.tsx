@@ -520,6 +520,7 @@ export default function UsuarioDetallePage({ params }: Props) {
 
     const susRepetidasQueNecesito: Figurita[] = calcularMatches(MI_USUARIO.faltantes, usuario.repetidas);
     const misRepetidasQueNecesita: Figurita[] = calcularOfertasPosibles(MI_USUARIO.repetidas, usuario.faltantes);
+    const isPremium = usuario.premium === true;
 
     const toggleQuiero = (id: string) =>
         setFiguritasQueQuiero(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -547,7 +548,7 @@ export default function UsuarioDetallePage({ params }: Props) {
 
             <main className="
                 max-w-lg mx-auto px-4 pt-20 pb-40
-                lg:ml-64 lg:mr-0 lg:max-w-none lg:pt-8 lg:px-8 lg:pb-8
+                lg:ml-64 lg:mr-0 lg:max-w-none lg:pt-8 lg:px-12 lg:pb-8
                 xl:mr-72
             ">
                 {/* Back */}
@@ -562,7 +563,13 @@ export default function UsuarioDetallePage({ params }: Props) {
                 </button>
 
                 {/* User hero */}
-                <div className="bg-gradient-to-r from-sky-500 to-sky-600 rounded-2xl p-5 mb-6 shadow-lg shadow-sky-200">
+                <div className={`
+                    rounded-2xl p-5 mb-6 relative overflow-hidden
+                    ${isPremium
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md shadow-amber-200"
+                        : "bg-gradient-to-r from-sky-500 to-sky-600 shadow-lg shadow-sky-200"
+                    }
+                `}>
                     <div className="flex items-center gap-4">
                         {/* Tappable avatar → public profile */}
                         <button
@@ -570,12 +577,16 @@ export default function UsuarioDetallePage({ params }: Props) {
                             className="relative w-14 h-14 rounded-full flex-shrink-0 group"
                             title={`Ver perfil de ${usuario.nombre}`}
                         >
-                            <div className="w-full h-full rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-black text-xl ring-2 ring-white/30 group-hover:ring-white/70 group-active:scale-95 transition-all duration-150 shadow-[0_0_14px_rgba(255,255,255,0.25)] group-hover:shadow-[0_0_22px_rgba(255,255,255,0.55)]">
+                            <div className="w-full h-full rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center font-black text-xl ring-2 ring-white/30 group-hover:ring-white/70 group-active:scale-95 transition-all duration-150 shadow-[0_0_14px_rgba(255,255,255,0.25)] group-hover:shadow-[0_0_22px_rgba(255,255,255,0.55)] text-white">
                                 {usuario.avatar}
                             </div>
+                            {/* Crown for premium */}
+                            {isPremium && (
+                                <span className="absolute -top-2.5 -right-1 text-[15px] leading-none select-none">👑</span>
+                            )}
                             {/* Eye hint */}
                             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                <svg className="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-3 h-3 ${isPremium ? "text-amber-500" : "text-sky-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
@@ -583,19 +594,35 @@ export default function UsuarioDetallePage({ params }: Props) {
                         </button>
 
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-white font-black text-xl leading-tight">{usuario.nombre}</h1>
+                            <div className="flex items-center gap-2">
+                                <h1 className={`font-black text-xl leading-tight ${isPremium ? "text-amber-900" : "text-white"}`}>
+                                    {usuario.nombre}
+                                </h1>
+                                {/* Blue premium checkmark */}
+                                {isPremium && (
+                                    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="12" fill="#3B82F6" />
+                                        <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
+                            </div>
                             <div className="flex items-center gap-1 mt-0.5">
-                                <svg className="w-3.5 h-3.5 text-sky-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-3.5 h-3.5 flex-shrink-0 ${isPremium ? "text-amber-700" : "text-sky-200"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span className="text-sky-100 text-sm">{usuario.ciudad}</span>
+                                <span className={`text-sm ${isPremium ? "text-amber-800" : "text-sky-100"}`}>{usuario.ciudad}</span>
                             </div>
+                            {isPremium && (
+                                <div className="inline-flex items-center gap-1 bg-white/30 rounded-full px-2 py-0.5 mt-1">
+                                    <span className="text-[9px] font-black text-amber-900 uppercase tracking-wide">⭐ Premium</span>
+                                </div>
+                            )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                             <div className="bg-white/20 rounded-xl px-3 py-2 text-center">
-                                <div className="text-white font-black text-xl leading-none">{susRepetidasQueNecesito.length}</div>
-                                <div className="text-sky-100 text-[10px] font-semibold uppercase tracking-wide mt-0.5">matches</div>
+                                <div className={`font-black text-xl leading-none ${isPremium ? "text-amber-900" : "text-white"}`}>{susRepetidasQueNecesito.length}</div>
+                                <div className={`text-[10px] font-semibold uppercase tracking-wide mt-0.5 ${isPremium ? "text-amber-700" : "text-sky-100"}`}>matches</div>
                             </div>
                             <div className="bg-amber-400 rounded-xl px-3 py-2 text-center">
                                 <div className="text-amber-900 font-black text-xl leading-none">{misRepetidasQueNecesita.length}</div>

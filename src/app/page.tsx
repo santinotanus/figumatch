@@ -31,7 +31,7 @@ export default function HomePage() {
         {/* Desktop page header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Tu feed</h1>
+            <h1 className="text-2xl font-black text-gray-900">⚽ Tu feed</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Usuarios con figuritas que te faltan
             </p>
@@ -52,7 +52,7 @@ export default function HomePage() {
         {/* Mobile feed header */}
         <div className="flex items-center justify-between mb-4 lg:hidden">
           <div>
-            <h1 className="text-xl font-black text-gray-900">Tu feed</h1>
+            <h1 className="text-xl font-black text-gray-900">⚽ Tu feed</h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Usuarios con figuritas que te faltan
             </p>
