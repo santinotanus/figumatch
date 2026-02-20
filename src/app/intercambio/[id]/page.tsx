@@ -8,6 +8,42 @@ import { isEspecial, getPrecio } from "@/lib/especialesStore";
 import { Encuentro } from "@/types";
 import Navbar from "@/components/Navbar";
 
+// ─── Star Rating input ────────────────────────────────────────────────────────
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+    const [hover, setHover] = useState(0);
+    return (
+        <div className="flex items-center justify-center gap-2">
+            {[1, 2, 3, 4, 5].map(n => (
+                <button
+                    key={n}
+                    type="button"
+                    onMouseEnter={() => setHover(n)}
+                    onMouseLeave={() => setHover(0)}
+                    onClick={() => onChange(n)}
+                    className="transition-transform active:scale-90"
+                >
+                    <svg
+                        className={`w-10 h-10 transition-colors ${n <= (hover || value) ? "text-amber-400" : "text-gray-200"
+                            }`}
+                        viewBox="0 0 24 24" fill="currentColor"
+                    >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+// ─── Rating labels ────────────────────────────────────────────────────────────
+const RATING_LABELS: Record<number, { emoji: string; text: string }> = {
+    1: { emoji: "😞", text: "Muy malo" },
+    2: { emoji: "😕", text: "Regular" },
+    3: { emoji: "😐", text: "Bien" },
+    4: { emoji: "😊", text: "Muy bien" },
+    5: { emoji: "🤩", text: "¡Excelente!" },
+};
+
 const FLAG: Record<string, string> = {
     Argentina: "🇦🇷", Brasil: "🇧🇷", Francia: "🇫🇷", España: "🇪🇸",
     Alemania: "🇩🇪", Portugal: "🇵🇹", Uruguay: "🇺🇾", Inglaterra: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", FIFA: "🌍",
@@ -44,9 +80,9 @@ const TIPS = [
         texto: "Evitá intercambiar en casas particulares de personas que no conocés. Si el otro insiste, es una señal de alerta.",
     },
     {
-        icon: "💳",
-        titulo: "Sin dinero suelto",
-        texto: "Llevá sólo las figuritas acordadas. No muestres efectivo ni objetos de valor innecesarios.",
+        icon: "⚠️",
+        titulo: "FiguMatch no garantiza la asistencia",
+        texto: "La app facilita el contacto, pero no puede asegurar que la otra persona se presente al encuentro. Te recomendamos confirmar el día anterior y acordar un punto de contacto.",
     },
     {
         icon: "🤝",
@@ -287,6 +323,24 @@ export default function IntercambioPage({ params }: { params: Promise<{ id: stri
     const [contraoferta, setContraoferta] = useState(false);
     const [showSafetyConfirmado, setShowSafetyConfirmado] = useState(false);
     const [showCancelarModal, setShowCancelarModal] = useState(false);
+
+    // "Intercambio realizado" flow
+    const [showRealizadoConfirm, setShowRealizadoConfirm] = useState(false);
+    const [showRating, setShowRating] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [ratingLoading, setRatingLoading] = useState(false);
+
+    const handleRealizadoConfirm = () => {
+        setShowRealizadoConfirm(false);
+        setShowRating(true);
+    };
+
+    const handleEnviarRating = useCallback(async () => {
+        if (rating === 0) return;
+        setRatingLoading(true);
+        await new Promise(r => setTimeout(r, 700)); // Simulate API
+        router.replace("/feed");
+    }, [rating, router]);
 
     const refresh = useCallback(() => setOferta(getOfertaById(id)), [id]);
 
@@ -612,16 +666,24 @@ export default function IntercambioPage({ params }: { params: Promise<{ id: stri
                             >
                                 ✏️ Cambiar mi propuesta
                             </button>
-                            {contraoferta && (
-                                <div className="mt-4 pt-4 border-t border-sky-200">
-                                    <FormularioPropuesta
-                                        titulo="Actualizá tu propuesta"
-                                        initLugar={enc.lugar} initFecha={enc.fecha} initHora={enc.hora}
-                                        onConfirmar={handlePropuesta}
-                                        onCancelar={() => setContraoferta(false)}
-                                    />
+                        </div>
+                    )}
+
+                    {/* CASO C — formulario de cambio (bloque separado para que !contraoferta no lo mate) */}
+                    {propuestaMia && enc && contraoferta && (
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-8 h-8 rounded-xl bg-sky-100 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-base">✏️</span>
                                 </div>
-                            )}
+                                <h2 className="font-black text-gray-900 text-sm">Cambiar mi propuesta</h2>
+                            </div>
+                            <FormularioPropuesta
+                                titulo="Actualizá tu propuesta"
+                                initLugar={enc.lugar} initFecha={enc.fecha} initHora={enc.hora}
+                                onConfirmar={handlePropuesta}
+                                onCancelar={() => setContraoferta(false)}
+                            />
                         </div>
                     )}
 
@@ -655,8 +717,21 @@ export default function IntercambioPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    {/* ── Cancelar intercambio ── */}
-                    <div className="mt-6 pt-5 border-t border-gray-200">
+                    {/* ── Acciones finales ── */}
+                    <div className="mt-6 pt-5 border-t border-gray-200 flex flex-col gap-3">
+                        {/* Intercambio realizado — solo visible cuando el encuentro está confirmado */}
+                        {confirmado && (
+                            <button
+                                onClick={() => setShowRealizadoConfirm(true)}
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm shadow-md shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Intercambio realizado ✅
+                            </button>
+                        )}
+
                         <button
                             onClick={() => setShowCancelarModal(true)}
                             className="w-full py-3 rounded-xl border-2 border-red-200 text-red-500 font-bold text-sm hover:bg-red-50 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
@@ -670,6 +745,89 @@ export default function IntercambioPage({ params }: { params: Promise<{ id: stri
 
                 </div>
             </main>
+
+            {/* ── Modal: confirmar que se realizó ── */}
+            {showRealizadoConfirm && (
+                <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center px-0 sm:px-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRealizadoConfirm(false)} />
+                    <div className="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden" />
+                        <div className="px-6 pt-6 pb-2 text-center">
+                            <div className="text-5xl mb-3">🤝</div>
+                            <h2 className="font-black text-gray-900 text-lg">¿Confirmás que ya intercambiaron?</h2>
+                            <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+                                Estás por marcar tu intercambio con <strong>{oferta.usuarioNombre}</strong> como completado.
+                            </p>
+                        </div>
+                        <div className="px-6 py-5 flex flex-col gap-2">
+                            <button
+                                onClick={handleRealizadoConfirm}
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm shadow-md shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all active:scale-[0.98]"
+                            >
+                                ✅ Sí, lo realizamos
+                            </button>
+                            <button
+                                onClick={() => setShowRealizadoConfirm(false)}
+                                className="w-full py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                            >
+                                No, todavía no
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Modal: puntuar el intercambio ── */}
+            {showRating && (
+                <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center px-0 sm:px-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                    <div className="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden" />
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 pt-6 pb-5 text-center">
+                            <div className="text-4xl mb-2">⭐</div>
+                            <h2 className="font-black text-white text-lg">¿Cómo fue el intercambio?</h2>
+                            <p className="text-emerald-100 text-xs mt-1">
+                                Tu puntuación ayuda a {oferta.usuarioNombre.split(" ")[0]} a mejorar su reputación
+                            </p>
+                        </div>
+
+                        <div className="px-6 pt-6 pb-2">
+                            {/* Stars */}
+                            <StarPicker value={rating} onChange={setRating} />
+
+                            {/* Label */}
+                            {rating > 0 && (
+                                <div className="mt-3 text-center">
+                                    <span className="text-2xl">{RATING_LABELS[rating].emoji}</span>
+                                    <p className="text-gray-700 font-black text-sm mt-1">{RATING_LABELS[rating].text}</p>
+                                </div>
+                            )}
+                            {rating === 0 && (
+                                <p className="text-center text-gray-400 text-sm mt-3">Tocá una estrella para puntuar</p>
+                            )}
+                        </div>
+
+                        <div className="px-6 py-5">
+                            <button
+                                onClick={handleEnviarRating}
+                                disabled={rating === 0 || ratingLoading}
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm shadow-md shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {ratingLoading ? (
+                                    <>
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                        </svg>
+                                        Enviando...
+                                    </>
+                                ) : "Enviar puntuación →"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Modal confirmar cancelación ── */}
             {showCancelarModal && (

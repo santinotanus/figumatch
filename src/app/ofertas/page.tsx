@@ -28,6 +28,12 @@ function timeAgo(iso: string): string {
     return `hace ${Math.floor(hrs / 24)}d`;
 }
 
+function fmtFecha(fecha: string) {
+    return new Date(fecha + "T12:00").toLocaleDateString("es-AR", {
+        weekday: "long", day: "numeric", month: "long",
+    });
+}
+
 function StickerPill({ id, color }: { id: string; color: "sky" | "amber" }) {
     const fig = FIGURITAS_MAP[id];
     const especial = isEspecial(id);
@@ -43,7 +49,382 @@ function StickerPill({ id, color }: { id: string; color: "sky" | "amber" }) {
     );
 }
 
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
+// ─── Mock history data ─────────────────────────────────────────────────────────
+interface CanjeHistorial {
+    id: string;
+    fecha: string;
+    usuarioNombre: string;
+    usuarioAvatar: string;
+    usuarioCiudad: string;
+    figuritasRecibidas: string[];  // IDs
+    figuritasEntregadas: string[]; // IDs
+    lugar: string;
+    horaEncuentro: string;
+    rating: number; // 1-5 stars given
+}
+
+const HISTORIAL_MOCK: CanjeHistorial[] = [
+    {
+        id: "h1",
+        fecha: "2026-02-15T10:30:00Z",
+        usuarioNombre: "Martina López",
+        usuarioAvatar: "ML",
+        usuarioCiudad: "Palermo, Buenos Aires",
+        figuritasRecibidas: ["ARG-1", "FRA-1"],
+        figuritasEntregadas: ["BRA-1", "ESP-1"],
+        lugar: "Obelisco, CABA",
+        horaEncuentro: "15:00",
+        rating: 5,
+    },
+    {
+        id: "h2",
+        fecha: "2026-02-10T09:00:00Z",
+        usuarioNombre: "Carlos Ruiz",
+        usuarioAvatar: "CR",
+        usuarioCiudad: "San Isidro, GBA",
+        figuritasRecibidas: ["GER-1", "POR-1"],
+        figuritasEntregadas: ["URU-1", "ENG-1"],
+        lugar: "Plaza San Martín, San Isidro",
+        horaEncuentro: "11:30",
+        rating: 4,
+    },
+    {
+        id: "h3",
+        fecha: "2026-02-03T16:00:00Z",
+        usuarioNombre: "Sofía Herrera",
+        usuarioAvatar: "SH",
+        usuarioCiudad: "Caballito, Buenos Aires",
+        figuritasRecibidas: ["ESP-TROFEO"],
+        figuritasEntregadas: ["ARG-2", "ARG-3", "ARG-4"],
+        lugar: "Patio Bullrich, Palermo",
+        horaEncuentro: "18:00",
+        rating: 5,
+    },
+    {
+        id: "h4",
+        fecha: "2026-01-28T14:00:00Z",
+        usuarioNombre: "Diego Morales",
+        usuarioAvatar: "DM",
+        usuarioCiudad: "Lanús, GBA",
+        figuritasRecibidas: ["BRA-2", "BRA-3"],
+        figuritasEntregadas: ["FRA-2", "FRA-3"],
+        lugar: "Estación Constitución",
+        horaEncuentro: "13:00",
+        rating: 3,
+    },
+];
+
+const RATING_LABELS: Record<number, { emoji: string; text: string }> = {
+    1: { emoji: "😞", text: "Muy malo" },
+    2: { emoji: "😕", text: "Regular" },
+    3: { emoji: "😐", text: "Bien" },
+    4: { emoji: "😊", text: "Muy bien" },
+    5: { emoji: "🤩", text: "¡Excelente!" },
+};
+
+// ─── Star display (read-only) ─────────────────────────────────────────────────
+function StarDisplay({ value }: { value: number }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map(n => (
+                <svg key={n} className={`w-4 h-4 ${n <= value ? "text-amber-400" : "text-gray-200"}`}
+                    viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+            ))}
+        </div>
+    );
+}
+
+// ─── Historial Card ───────────────────────────────────────────────────────────
+function HistorialCard({ canje, onClick }: { canje: CanjeHistorial; onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-150 active:scale-[0.99] overflow-hidden"
+        >
+            {/* Top */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-200 flex items-center justify-center font-black text-emerald-700 text-sm flex-shrink-0">
+                    {canje.usuarioAvatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-black text-gray-900 text-sm truncate">{canje.usuarioNombre}</p>
+                    <p className="text-xs text-gray-400">{canje.usuarioCiudad}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
+                        ✅ Realizado
+                    </span>
+                    <StarDisplay value={canje.rating} />
+                </div>
+            </div>
+
+            {/* Stickers + date */}
+            <div className="px-4 py-3 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black text-sky-500 uppercase tracking-wide mb-1">Recibiste</p>
+                    <div className="flex flex-wrap gap-1">
+                        {canje.figuritasRecibidas.slice(0, 2).map(id => (
+                            <StickerPill key={id} id={id} color="sky" />
+                        ))}
+                        {canje.figuritasRecibidas.length > 2 && (
+                            <span className="text-[11px] text-gray-400 font-semibold">+{canje.figuritasRecibidas.length - 2}</span>
+                        )}
+                    </div>
+                </div>
+
+                <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+
+                <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-wide mb-1">Entregaste</p>
+                    <div className="flex flex-wrap gap-1">
+                        {canje.figuritasEntregadas.slice(0, 2).map(id => (
+                            <StickerPill key={id} id={id} color="amber" />
+                        ))}
+                        {canje.figuritasEntregadas.length > 2 && (
+                            <span className="text-[11px] text-gray-400 font-semibold">+{canje.figuritasEntregadas.length - 2}</span>
+                        )}
+                    </div>
+                </div>
+
+                <svg className="w-4 h-4 text-gray-300 flex-shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
+
+            {/* Date + location footer */}
+            <div className="px-4 pb-3 flex items-center gap-2">
+                <span className="text-gray-300">|</span>
+                <span className="text-[11px] text-gray-400">📍 {canje.lugar}</span>
+                <span className="text-gray-300">·</span>
+                <span className="text-[11px] text-gray-400">{timeAgo(canje.fecha)}</span>
+            </div>
+        </button>
+    );
+}
+
+// ─── Historial Detail Modal ────────────────────────────────────────────────────
+function HistorialDetailModal({ canje, onClose }: { canje: CanjeHistorial; onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center px-0 sm:px-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden flex-shrink-0" />
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-5 pt-5 pb-5 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center font-black text-white text-base ring-2 ring-white/30 flex-shrink-0">
+                            {canje.usuarioAvatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-white/70 text-xs font-medium">Canje realizado con</p>
+                            <h2 className="text-white font-black text-lg leading-tight truncate">{canje.usuarioNombre}</h2>
+                            <p className="text-white/60 text-xs">{canje.usuarioCiudad}</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors flex-shrink-0"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Encuentro info */}
+                    <div className="mt-3 bg-white/15 rounded-xl px-4 py-3 flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2 text-white text-xs">
+                            <span>📍</span>
+                            <span className="font-semibold">{canje.lugar}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-white/80 text-xs">
+                            <span>📅</span>
+                            <span>{fmtFecha(canje.fecha.split("T")[0])}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-white/80 text-xs">
+                            <span>🕐</span>
+                            <span>{canje.horaEncuentro} hs</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Body */}
+                <div className="overflow-y-auto px-5 py-5 flex flex-col gap-4">
+                    {/* Rating */}
+                    <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+                        <span className="text-3xl">{RATING_LABELS[canje.rating].emoji}</span>
+                        <div>
+                            <p className="font-black text-gray-900 text-sm">Tu puntuación: {RATING_LABELS[canje.rating].text}</p>
+                            <StarDisplay value={canje.rating} />
+                        </div>
+                    </div>
+
+                    {/* Figuritas breakdown */}
+                    <div className="flex gap-3">
+                        {/* Recibiste */}
+                        <div className="flex-1 bg-sky-50 border border-sky-100 rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <div className="w-4 h-4 rounded-full bg-sky-500 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                </div>
+                                <span className="text-[10px] font-black text-sky-600 uppercase tracking-wide">
+                                    Recibiste ({canje.figuritasRecibidas.length})
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {canje.figuritasRecibidas.map(id => {
+                                    const fig = FIGURITAS_MAP[id];
+                                    return (
+                                        <div key={id} className="flex items-center gap-1.5">
+                                            <span className="text-sm">{FLAG[fig?.pais] || "🌍"}</span>
+                                            <span className="text-xs font-semibold text-gray-800 truncate">
+                                                #{fig?.numero} {fig?.nombre}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex items-center justify-center flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
+                                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Entregaste */}
+                        <div className="flex-1 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-2.5 h-2.5 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                    </svg>
+                                </div>
+                                <span className="text-[10px] font-black text-amber-600 uppercase tracking-wide">
+                                    Entregaste ({canje.figuritasEntregadas.length})
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {canje.figuritasEntregadas.map(id => {
+                                    const fig = FIGURITAS_MAP[id];
+                                    return (
+                                        <div key={id} className="flex items-center gap-1.5">
+                                            <span className="text-sm">{FLAG[fig?.pais] || "🌍"}</span>
+                                            <span className="text-xs font-semibold text-gray-800 truncate">
+                                                #{fig?.numero} {fig?.nombre}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 pb-6 pt-2 flex-shrink-0 border-t border-gray-100">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Historial Sheet ──────────────────────────────────────────────────────────
+function HistorialSheet({ onClose }: { onClose: () => void }) {
+    const [selectedCanje, setSelectedCanje] = useState<CanjeHistorial | null>(null);
+
+    return (
+        <>
+            <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center px-0 sm:px-4">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+                <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[88vh] flex flex-col">
+                    <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden flex-shrink-0" />
+
+                    {/* Header */}
+                    <div className="px-5 pt-4 pb-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                        <div>
+                            <h2 className="font-black text-gray-900 text-lg">📚 Historial de canjes</h2>
+                            <p className="text-xs text-gray-400 mt-0.5">{HISTORIAL_MOCK.length} intercambios completados</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Stats strip */}
+                    <div className="flex gap-0 border-b border-gray-100 flex-shrink-0">
+                        <div className="flex-1 text-center py-3">
+                            <p className="font-black text-emerald-600 text-xl">{HISTORIAL_MOCK.length}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Canjes</p>
+                        </div>
+                        <div className="w-px bg-gray-100" />
+                        <div className="flex-1 text-center py-3">
+                            <p className="font-black text-sky-600 text-xl">
+                                {HISTORIAL_MOCK.reduce((acc, c) => acc + c.figuritasRecibidas.length, 0)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Recibidas</p>
+                        </div>
+                        <div className="w-px bg-gray-100" />
+                        <div className="flex-1 text-center py-3">
+                            <p className="font-black text-amber-500 text-xl">
+                                {HISTORIAL_MOCK.reduce((acc, c) => acc + c.figuritasEntregadas.length, 0)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Entregadas</p>
+                        </div>
+                        <div className="w-px bg-gray-100" />
+                        <div className="flex-1 text-center py-3">
+                            <p className="font-black text-amber-400 text-xl">
+                                {(HISTORIAL_MOCK.reduce((acc, c) => acc + c.rating, 0) / HISTORIAL_MOCK.length).toFixed(1)} ⭐
+                            </p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Promedio</p>
+                        </div>
+                    </div>
+
+                    {/* Cards list */}
+                    <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+                        {HISTORIAL_MOCK.map(canje => (
+                            <HistorialCard
+                                key={canje.id}
+                                canje={canje}
+                                onClick={() => setSelectedCanje(canje)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Detail modal rendered on top of sheet */}
+            {selectedCanje && (
+                <HistorialDetailModal
+                    canje={selectedCanje}
+                    onClose={() => setSelectedCanje(null)}
+                />
+            )}
+        </>
+    );
+}
+
+// ─── Detail Modal (active offers) ─────────────────────────────────────────────
 function DetailModal({
     oferta,
     onClose,
@@ -76,7 +457,6 @@ function DetailModal({
                     }`}>
                     <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-4 sm:hidden" />
                     <div className="flex items-center gap-3">
-                        {/* Tappable avatar — navigates to public profile */}
                         <button
                             onClick={() => {
                                 onClose();
@@ -85,11 +465,9 @@ function DetailModal({
                             className="relative w-12 h-12 rounded-full flex-shrink-0 group"
                             title={`Ver perfil de ${oferta.usuarioNombre}`}
                         >
-                            {/* Avatar circle */}
                             <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center text-white font-black text-base ring-2 ring-white/40 group-hover:ring-white/80 group-active:scale-95 transition-all duration-150 shadow-[0_0_12px_rgba(255,255,255,0.3)] group-hover:shadow-[0_0_20px_rgba(255,255,255,0.6)]">
                                 {oferta.usuarioAvatar}
                             </div>
-                            {/* Small "view" hint icon */}
                             <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm">
                                 <svg className="w-2.5 h-2.5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -107,7 +485,6 @@ function DetailModal({
                         {esActiva && <div className="text-2xl flex-shrink-0">🤝</div>}
                     </div>
 
-                    {/* Encuentro preview — solo si hay datos confirmados */}
                     {esActiva && oferta.encuentro && (
                         <div className="mt-3 bg-white/15 rounded-xl px-4 py-3 flex items-center gap-3">
                             <div className="text-xl flex-shrink-0">📍</div>
@@ -124,9 +501,7 @@ function DetailModal({
                 </div>
 
                 <div className="px-5 py-4">
-                    {/* Trade breakdown */}
                     <div className="flex gap-3 mb-4">
-                        {/* Recibís */}
                         <div className="flex-1 bg-sky-50 border border-sky-100 rounded-xl p-3">
                             <div className="flex items-center gap-1.5 mb-2">
                                 <div className="w-4 h-4 rounded-full bg-sky-500 flex items-center justify-center flex-shrink-0">
@@ -158,7 +533,6 @@ function DetailModal({
                             </div>
                         </div>
 
-                        {/* Arrow */}
                         <div className="flex items-center justify-center flex-shrink-0">
                             <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
                                 <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +541,6 @@ function DetailModal({
                             </div>
                         </div>
 
-                        {/* Entregás */}
                         <div className="flex-1 bg-amber-50 border border-amber-100 rounded-xl p-3">
                             <div className="flex items-center gap-1.5 mb-2">
                                 <div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0">
@@ -195,7 +568,6 @@ function DetailModal({
                         </div>
                     </div>
 
-                    {/* Confirm sub-prompt */}
                     {confirming && (
                         <div className={`rounded-xl p-3 mb-3 ${confirming === "rechazar" ? "bg-red-50 border border-red-100" : "bg-orange-50 border border-orange-100"}`}>
                             <p className={`text-sm font-bold mb-2 ${confirming === "rechazar" ? "text-red-700" : "text-orange-700"}`}>
@@ -223,7 +595,6 @@ function DetailModal({
                         </div>
                     )}
 
-                    {/* Actions */}
                     {!confirming && (
                         <div className="flex gap-2">
                             {esPendienteYo && (
@@ -277,21 +648,14 @@ function DetailModal({
                     )}
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
 
 // ─── Offer Card ───────────────────────────────────────────────────────────────
-function OfertaCard({
-    oferta,
-    onClick,
-}: {
-    oferta: OfertaCompleta;
-    onClick: () => void;
-}) {
+function OfertaCard({ oferta, onClick }: { oferta: OfertaCompleta; onClick: () => void }) {
     const esPendienteYo = oferta.estado === "pendiente_yo";
     const esPendienteEllos = oferta.estado === "pendiente_ellos";
-    const esActiva = oferta.estado === "activa";
 
     const borderColor = esPendienteYo ? "border-sky-200" : esPendienteEllos ? "border-gray-200" : "border-emerald-200";
     const dotColor = esPendienteYo ? "bg-sky-500" : esPendienteEllos ? "bg-amber-400" : "bg-emerald-500";
@@ -301,9 +665,7 @@ function OfertaCard({
             onClick={onClick}
             className={`w-full text-left bg-white rounded-2xl border-2 ${borderColor} shadow-sm hover:shadow-md transition-all duration-150 active:scale-[0.99] overflow-hidden`}
         >
-            {/* Top bar */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-                {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-black text-gray-600 text-sm flex-shrink-0">
                     {oferta.usuarioAvatar}
                 </div>
@@ -311,7 +673,6 @@ function OfertaCard({
                     <p className="font-black text-gray-900 text-sm truncate">{oferta.usuarioNombre}</p>
                     <p className="text-xs text-gray-400">{oferta.usuarioCiudad} · {timeAgo(oferta.fecha)}</p>
                 </div>
-                {/* Status dot + label */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                     <div className={`w-2 h-2 rounded-full ${dotColor} ${esPendienteYo ? "animate-pulse" : ""}`} />
                     <span className={`text-[10px] font-black uppercase tracking-wide
@@ -321,9 +682,7 @@ function OfertaCard({
                 </div>
             </div>
 
-            {/* Sticker pills */}
             <div className="px-4 py-3 flex items-center gap-2">
-                {/* Recibo */}
                 <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-black text-sky-500 uppercase tracking-wide mb-1">Recibís</p>
                     <div className="flex flex-wrap gap-1">
@@ -336,12 +695,10 @@ function OfertaCard({
                     </div>
                 </div>
 
-                {/* Arrow */}
                 <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
 
-                {/* Entrego */}
                 <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-black text-amber-500 uppercase tracking-wide mb-1">Entregás</p>
                     <div className="flex flex-wrap gap-1">
@@ -354,7 +711,6 @@ function OfertaCard({
                     </div>
                 </div>
 
-                {/* Chevron */}
                 <svg className="w-4 h-4 text-gray-300 flex-shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -394,6 +750,7 @@ export default function OfertasPage() {
     const [ofertas, setOfertas] = useState<OfertaCompleta[]>(() => getOfertas());
     const [selected, setSelected] = useState<OfertaCompleta | null>(null);
     const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" } | null>(null);
+    const [showHistorial, setShowHistorial] = useState(false);
 
     const showToast = (message: string, type: "success" | "info" | "warning") => {
         setToast({ message, type });
@@ -408,7 +765,6 @@ export default function OfertasPage() {
         refresh();
         setSelected(null);
         showToast("¡Oferta aceptada! Las figuritas se actualizaron.", "success");
-        // Switch to activas tab
         setTab("activas");
     }, [selected, refresh]);
 
@@ -432,30 +788,6 @@ export default function OfertasPage() {
     const enviadas = ofertas.filter(o => o.estado === "pendiente_ellos");
     const activas = ofertas.filter(o => o.estado === "activa");
 
-    const TABS: { id: Tab; label: string; count: number; color: string; activeColor: string }[] = [
-        {
-            id: "recibidas",
-            label: "Recibidas",
-            count: recibidas.length,
-            color: "text-gray-500",
-            activeColor: "text-sky-600 border-sky-500",
-        },
-        {
-            id: "enviadas",
-            label: "Enviadas",
-            count: enviadas.length,
-            color: "text-gray-500",
-            activeColor: "text-amber-600 border-amber-400",
-        },
-        {
-            id: "activas",
-            label: "Activas",
-            count: activas.length,
-            color: "text-gray-500",
-            activeColor: "text-emerald-600 border-emerald-500",
-        },
-    ];
-
     const currentList = tab === "recibidas" ? recibidas : tab === "enviadas" ? enviadas : activas;
 
     return (
@@ -469,9 +801,24 @@ export default function OfertasPage() {
             ">
                 <div className="max-w-lg mx-auto lg:max-w-2xl lg:mx-auto">
                     {/* Header */}
-                    <div className="mb-5 mt-2">
-                        <h1 className="text-2xl font-black text-gray-900">🔄 Mis Ofertas</h1>
-                        <p className="text-sm text-gray-400 mt-0.5">Gestioná tus intercambios</p>
+                    <div className="mb-5 mt-2 flex items-start justify-between gap-3">
+                        <div>
+                            <h1 className="text-2xl font-black text-gray-900">🔄 Mis Ofertas</h1>
+                            <p className="text-sm text-gray-400 mt-0.5">Gestioná tus intercambios</p>
+                        </div>
+                        {/* Historial button */}
+                        <button
+                            onClick={() => setShowHistorial(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-emerald-200 text-emerald-700 font-black text-xs rounded-xl hover:bg-emerald-50 hover:border-emerald-300 transition-all active:scale-95 shadow-sm flex-shrink-0"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Historial
+                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                                {HISTORIAL_MOCK.length}
+                            </span>
+                        </button>
                     </div>
 
                     {/* Summary cards */}
@@ -513,7 +860,7 @@ export default function OfertasPage() {
                         <span className="text-xs text-gray-400 font-medium">({currentList.length})</span>
                     </div>
 
-                    {/* Context hint */}
+                    {/* Context hints */}
                     {tab === "recibidas" && recibidas.length > 0 && (
                         <div className="flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-xl px-3 py-2 mb-4">
                             <svg className="w-4 h-4 text-sky-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -573,7 +920,7 @@ export default function OfertasPage() {
                 </div>
             </main>
 
-            {/* Detail modal */}
+            {/* Detail modal (active offers) */}
             {selected && (
                 <DetailModal
                     oferta={selected}
@@ -582,6 +929,11 @@ export default function OfertasPage() {
                     onRechazar={handleRechazar}
                     onCancelar={handleCancelar}
                 />
+            )}
+
+            {/* Historial sheet */}
+            {showHistorial && (
+                <HistorialSheet onClose={() => setShowHistorial(false)} />
             )}
 
             {/* Toast */}
