@@ -50,17 +50,15 @@ function AddModal({
             return;
         }
 
-        // Find sticker by number
+        // Find sticker by number — if not in catalog, create a dynamic one
         const fig = TODAS_LAS_FIGURITAS.find(f => f.numero === numInt);
-        if (!fig) {
-            setError(`No existe la figurita #${num}`);
+        const figId = fig ? fig.id : `FIG-${numInt}`;
+
+        if (seleccionadas.includes(figId)) {
+            setError(`Ya agregaste la #${numInt}`);
             return;
         }
-        if (seleccionadas.includes(fig.id)) {
-            setError(`Ya agregaste la #${num}`);
-            return;
-        }
-        setSeleccionadas(prev => [...prev, fig.id]);
+        setSeleccionadas(prev => [...prev, figId]);
         setInput("");
         setError("");
     };
@@ -92,12 +90,12 @@ function AddModal({
                         <div className="relative flex-1">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-black text-sm">#</span>
                             <input
-                                type="number"
-                                min="1"
-                                max="940"
-                                placeholder="1 – 940"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="Ej: 47, 312, 820..."
                                 value={input}
-                                onChange={e => { setInput(e.target.value); setError(""); }}
+                                onChange={e => { setInput(e.target.value.replace(/[^0-9]/g, "")); setError(""); }}
                                 onKeyDown={e => e.key === "Enter" && agregarNumero()}
                                 className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all"
                                 autoFocus
@@ -119,14 +117,16 @@ function AddModal({
                     {seleccionadas.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-4 max-h-32 overflow-y-auto">
                             {seleccionadas.map(id => {
+                                // Support dynamic stickers (FIG-{n}) not in catalog
                                 const fig = TODAS_LAS_FIGURITAS.find(f => f.id === id);
+                                const num = fig?.numero ?? parseInt(id.replace("FIG-", ""), 10);
                                 return (
                                     <button
                                         key={id}
                                         onClick={() => quitar(id)}
                                         className={`flex items-center gap-1 text-xs border rounded-full px-2.5 py-1 font-bold transition-all hover:opacity-70 ${chipBg}`}
                                     >
-                                        #{fig?.numero}
+                                        #{num}
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                         </svg>
@@ -266,7 +266,8 @@ function StickerChip({
     onEspecialClick?: () => void;
 }) {
     const fig = TODAS_LAS_FIGURITAS.find(f => f.id === figId);
-    const num = fig?.numero ?? "?";
+    // For dynamic stickers (FIG-{n}) not in the catalog, extract the number from the ID
+    const num = fig?.numero ?? parseInt(figId.replace("FIG-", ""), 10);
 
     const base = color === "sky"
         ? "bg-sky-50 border-sky-200 text-sky-800"

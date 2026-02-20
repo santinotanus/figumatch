@@ -8,8 +8,8 @@ import { getOfertas } from "@/lib/ofertasStore";
 
 const NAV_ITEMS = [
     {
-        href: "/",
-        label: "Tu feed",
+        href: "/feed",
+        label: "Mis Matches",
         icon: (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -56,13 +56,13 @@ export default function Sidebar() {
     return (
         <aside className="hidden lg:flex flex-col w-64 xl:w-72 fixed top-0 left-0 h-screen bg-white border-r border-gray-100 z-40 px-4 py-6">
             {/* Logo */}
-            <Link href="/" className="flex items-center mb-8 px-2">
+            <Link href="/" className="flex items-center -mb-2 px-0">
                 <Image
                     src="/logo.png"
                     alt="FiguMatch"
-                    width={200}
-                    height={70}
-                    className="h-12 w-auto object-contain"
+                    width={400}
+                    height={180}
+                    className="h-36 w-auto object-contain -ml-4"
                     priority
                 />
             </Link>

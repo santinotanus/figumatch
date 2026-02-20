@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Baloo_2 } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import RightPanel from "@/components/RightPanel";
-import BottomNav from "@/components/BottomNav";
+import AppShell from "@/components/AppShell";
 
-const inter = Inter({
+const inter = Inter({ subsets: ["latin"] });
+const baloo2 = Baloo_2({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-baloo-2"
 });
 
 export const metadata: Metadata = {
@@ -24,18 +23,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.className} antialiased bg-gray-50`}>
-        {/* Desktop sidebar */}
-        <Sidebar />
-
-        {/* Desktop right panel */}
-        <RightPanel />
-
-        {/* Page content */}
-        {children}
-
-        {/* Mobile bottom navigation */}
-        <BottomNav />
+      <body className={`${inter.className} ${baloo2.variable} antialiased bg-gray-50`}>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

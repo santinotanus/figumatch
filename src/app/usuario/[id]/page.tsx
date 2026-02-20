@@ -302,7 +302,7 @@ function OfferBar({
     const hayEspecial = quiero.some(id => isEspecial(id));
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 lg:left-64 xl:right-72">
+        <div className="fixed bottom-16 left-0 right-0 z-[60] lg:bottom-0 lg:left-64 xl:right-72">
             {(quiero.length > 0 || ofrezco.length > 0) && (
                 <div className="bg-gray-50 border-t border-gray-100 px-4 py-2 flex items-center gap-2 overflow-x-auto">
                     {quiero.length > 0 && (
@@ -547,7 +547,7 @@ export default function UsuarioDetallePage({ params }: Props) {
             <Navbar />
 
             <main className="
-                max-w-lg mx-auto px-4 pt-20 pb-40
+                max-w-lg mx-auto px-4 pt-20 pb-56
                 lg:ml-64 lg:mr-0 lg:max-w-none lg:pt-8 lg:px-12 lg:pb-8
                 xl:mr-72
             ">

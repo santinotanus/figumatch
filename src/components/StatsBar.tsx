@@ -19,13 +19,6 @@ export default function StatsBar({ totalMatches }: StatsBarProps) {
                         {MI_USUARIO.nombre} 👋
                     </h2>
                 </div>
-                {/* Trofeo dorado */}
-                <div className="bg-amber-400 rounded-xl px-3 py-1.5 text-center shadow-sm">
-                    <div className="text-amber-900 font-black text-xl leading-none">{totalMatches}</div>
-                    <div className="text-amber-800 text-[10px] font-bold uppercase tracking-wide">
-                        usuarios
-                    </div>
-                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
