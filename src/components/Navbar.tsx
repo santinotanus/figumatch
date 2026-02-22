@@ -10,9 +10,9 @@ export default function Navbar() {
             <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
                 {/* Text Logo for Mobile - Cleaner than image on small screens */}
                 <Link href="/feed" className="flex items-center mx-auto py-2">
-                    <div className="flex items-center select-none font-baloo2" style={{ fontFamily: 'var(--font-baloo-2), "Baloo 2", cursive' }}>
-                        <span className="text-3xl font-black text-sky-400 drop-shadow-[0_2px_0_rgba(15,23,42,1)] tracking-tight italic">Figu</span>
-                        <span className="text-3xl font-black text-yellow-400 drop-shadow-[0_2px_0_rgba(15,23,42,1)] tracking-tight italic">Match</span>
+                    <div className="flex items-center select-none">
+                        <span className="text-3xl font-black text-sky-400 drop-shadow-[0_2px_0_rgba(15,23,42,1)] tracking-tight">Figu</span>
+                        <span className="text-3xl font-black text-yellow-400 drop-shadow-[0_2px_0_rgba(15,23,42,1)] tracking-tight">Match</span>
                     </div>
                 </Link>
             </div>

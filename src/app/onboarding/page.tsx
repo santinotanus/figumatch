@@ -134,12 +134,14 @@ function CounterBadge({ count, min, label }: { count: number; min: number; label
 function NumberInput({
     label,
     numbers,
+    opuestas,
     onAdd,
     onRemove,
     placeholder,
 }: {
     label: string;
     numbers: number[];
+    opuestas: number[];  // the other list — can't be in both
     onAdd: (n: number) => void;
     onRemove: (n: number) => void;
     placeholder?: string;
@@ -150,7 +152,8 @@ function NumberInput({
     const handleAdd = () => {
         const n = parseInt(input.trim(), 10);
         if (isNaN(n) || n < 1 || n > 999) { setInputError("Ingresá un número entre 1 y 999."); return; }
-        if (numbers.includes(n)) { setInputError("Ya la tenés en la lista."); return; }
+        if (numbers.includes(n)) { setInputError("Ya la tenés en esta lista."); return; }
+        if (opuestas.includes(n)) { setInputError(`La #${n} ya está en la lista opuesta. No puede estar en ambas.`); return; }
         setInputError("");
         onAdd(n);
         setInput("");
@@ -299,6 +302,7 @@ function StepFiguritas({ repetidas, faltantes, onRepetidas, onFaltantes, onNext,
             <NumberInput
                 label="Mis repetidas (las que me sobran)"
                 numbers={repetidas}
+                opuestas={faltantes}
                 onAdd={n => { setError(""); onRepetidas([...repetidas, n]); }}
                 onRemove={n => onRepetidas(repetidas.filter(x => x !== n))}
                 placeholder="Ej: 42"
@@ -308,6 +312,7 @@ function StepFiguritas({ repetidas, faltantes, onRepetidas, onFaltantes, onNext,
             <NumberInput
                 label="Mis faltantes (las que me faltan)"
                 numbers={faltantes}
+                opuestas={repetidas}
                 onAdd={n => { setError(""); onFaltantes([...faltantes, n]); }}
                 onRemove={n => onFaltantes(faltantes.filter(x => x !== n))}
                 placeholder="Ej: 87"
@@ -390,8 +395,8 @@ function StepZonas({ zonas, onZonas, onFinish, onBack, loading }: {
                     return (
                         <button key={zona} type="button" disabled={maxed} onClick={() => toggle(zona)}
                             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 ${selected ? "bg-sky-500 text-white border-sky-500 shadow-sm"
-                                    : maxed ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
-                                        : "bg-white text-gray-600 border-gray-200 hover:border-sky-300 hover:bg-sky-50"
+                                : maxed ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                                    : "bg-white text-gray-600 border-gray-200 hover:border-sky-300 hover:bg-sky-50"
                                 }`}>
                             {zona}
                         </button>

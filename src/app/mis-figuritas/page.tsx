@@ -14,12 +14,14 @@ function AddModal({
     titulo,
     color,
     existentes,
+    opuestas,
     onAdd,
     onClose,
 }: {
     titulo: string;
     color: "sky" | "amber";
-    existentes: Set<string>;
+    existentes: Set<string>;  // IDs already in THIS list
+    opuestas: Set<string>;    // IDs in the OTHER list — can't overlap
     onAdd: (ids: string[]) => void;
     onClose: () => void;
 }) {
@@ -55,7 +57,16 @@ function AddModal({
         const figId = fig ? fig.id : `FIG-${numInt}`;
 
         if (seleccionadas.includes(figId)) {
-            setError(`Ya agregaste la #${numInt}`);
+            setError(`Ya agregaste la #${numInt} en esta sesión`);
+            return;
+        }
+        if (existentes.has(figId)) {
+            setError(`La #${numInt} ya está en tu lista`);
+            return;
+        }
+        if (opuestas.has(figId)) {
+            const tipoOpuesto = color === "sky" ? "faltantes" : "repetidas";
+            setError(`La #${numInt} ya está en tus ${tipoOpuesto}. No puede estar en ambas`);
             return;
         }
         setSeleccionadas(prev => [...prev, figId]);
@@ -507,6 +518,7 @@ export default function MiAlbumPage() {
                     titulo="Agregar repetidas"
                     color="sky"
                     existentes={new Set(repetidas)}
+                    opuestas={new Set(faltantes)}
                     onAdd={agregarRepetidas}
                     onClose={() => setModal(null)}
                 />
@@ -516,6 +528,7 @@ export default function MiAlbumPage() {
                     titulo="Agregar faltantes"
                     color="amber"
                     existentes={new Set(faltantes)}
+                    opuestas={new Set(repetidas)}
                     onAdd={agregarFaltantes}
                     onClose={() => setModal(null)}
                 />
