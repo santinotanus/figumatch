@@ -49,7 +49,7 @@ function ConfirmModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+            <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-sky-500 to-sky-600 px-5 pt-5 pb-6">
                     {/* Drag handle (mobile) */}
@@ -65,7 +65,7 @@ function ConfirmModal({
                     </div>
                 </div>
 
-                <div className="px-5 py-4">
+                <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0">
                     {/* Trade visual */}
                     <div className="flex gap-3 mb-5">
                         {/* Recibís */}
@@ -80,7 +80,7 @@ function ConfirmModal({
                                     Recibís ({quiero.length})
                                 </span>
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 max-h-28 overflow-y-auto">
                                 {quiero.map(id => (
                                     <div key={id} className="flex items-center gap-1.5">
                                         <span className="text-sm">{FLAG[FIGURITAS_MAP[id]?.pais] || "🌍"}</span>
@@ -113,7 +113,7 @@ function ConfirmModal({
                                     Entregás ({ofrezco.length})
                                 </span>
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 max-h-28 overflow-y-auto">
                                 {ofrezco.map(id => (
                                     <div key={id} className="flex items-center gap-1.5">
                                         <span className="text-sm">{FLAG[FIGURITAS_MAP[id]?.pais] || "🌍"}</span>
@@ -570,6 +570,7 @@ export default function UsuarioDetallePage({ params }: Props) {
                         : "bg-gradient-to-r from-sky-500 to-sky-600 shadow-lg shadow-sky-200"
                     }
                 `}>
+                    {/* Top row: avatar + info + stats */}
                     <div className="flex items-center gap-4">
                         {/* Tappable avatar → public profile */}
                         <button
@@ -593,9 +594,10 @@ export default function UsuarioDetallePage({ params }: Props) {
                             </span>
                         </button>
 
+                        {/* Name + city (flex-1 so it takes remaining space) */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <h1 className={`font-black text-xl leading-tight ${isPremium ? "text-amber-900" : "text-white"}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className={`font-black text-xl leading-tight truncate ${isPremium ? "text-amber-900" : "text-white"}`}>
                                     {usuario.nombre}
                                 </h1>
                                 {/* Blue premium checkmark */}
@@ -611,7 +613,7 @@ export default function UsuarioDetallePage({ params }: Props) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span className={`text-sm ${isPremium ? "text-amber-800" : "text-sky-100"}`}>{usuario.ciudad}</span>
+                                <span className={`text-sm truncate ${isPremium ? "text-amber-800" : "text-sky-100"}`}>{usuario.ciudad}</span>
                             </div>
                             {isPremium && (
                                 <div className="inline-flex items-center gap-1 bg-white/30 rounded-full px-2 py-0.5 mt-1">
@@ -619,15 +621,17 @@ export default function UsuarioDetallePage({ params }: Props) {
                                 </div>
                             )}
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                            <div className="bg-white/20 rounded-xl px-3 py-2 text-center">
-                                <div className={`font-black text-xl leading-none ${isPremium ? "text-amber-900" : "text-white"}`}>{susRepetidasQueNecesito.length}</div>
-                                <div className={`text-[10px] font-semibold uppercase tracking-wide mt-0.5 ${isPremium ? "text-amber-700" : "text-sky-100"}`}>matches</div>
-                            </div>
-                            <div className="bg-amber-400 rounded-xl px-3 py-2 text-center">
-                                <div className="text-amber-900 font-black text-xl leading-none">{misRepetidasQueNecesita.length}</div>
-                                <div className="text-amber-800 text-[10px] font-semibold uppercase tracking-wide mt-0.5">puedo dar</div>
-                            </div>
+                    </div>
+
+                    {/* Stats row — separate line, always full width, no overflow */}
+                    <div className="flex gap-2 mt-3">
+                        <div className="flex-1 bg-white/20 rounded-xl px-3 py-2 text-center">
+                            <div className={`font-black text-xl leading-none ${isPremium ? "text-amber-900" : "text-white"}`}>{susRepetidasQueNecesito.length}</div>
+                            <div className={`text-[10px] font-semibold uppercase tracking-wide mt-0.5 ${isPremium ? "text-amber-700" : "text-sky-100"}`}>matches</div>
+                        </div>
+                        <div className="flex-1 bg-amber-400 rounded-xl px-3 py-2 text-center">
+                            <div className="text-amber-900 font-black text-xl leading-none">{misRepetidasQueNecesita.length}</div>
+                            <div className="text-amber-800 text-[10px] font-semibold uppercase tracking-wide mt-0.5">puedo dar</div>
                         </div>
                     </div>
                 </div>

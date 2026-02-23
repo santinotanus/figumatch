@@ -199,15 +199,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
                                 <p className="text-xs text-gray-500 mt-2 font-medium">
                                     Basado en <strong className="text-gray-700">{cambios}</strong> intercambios
                                 </p>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full"
-                                            style={{ width: `${(rep / 5) * 100}%` }}
-                                        />
-                                    </div>
-                                    <span className="text-[10px] text-gray-400 font-semibold">{Math.round((rep / 5) * 100)}%</span>
-                                </div>
                             </div>
                         </div>
                     </div>

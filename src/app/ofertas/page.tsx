@@ -98,7 +98,7 @@ const HISTORIAL_MOCK: CanjeHistorial[] = [
         figuritasEntregadas: ["ARG-2", "ARG-3", "ARG-4"],
         lugar: "Patio Bullrich, Palermo",
         horaEncuentro: "18:00",
-        rating: 5,
+        rating: 0, // sin puntuar
     },
     {
         id: "h4",
@@ -110,7 +110,7 @@ const HISTORIAL_MOCK: CanjeHistorial[] = [
         figuritasEntregadas: ["FRA-2", "FRA-3"],
         lugar: "Estación Constitución",
         horaEncuentro: "13:00",
-        rating: 3,
+        rating: 0, // sin puntuar
     },
 ];
 
@@ -138,76 +138,148 @@ function StarDisplay({ value }: { value: number }) {
 
 // ─── Historial Card ───────────────────────────────────────────────────────────
 function HistorialCard({ canje, onClick }: { canje: CanjeHistorial; onClick: () => void }) {
+    const sinPuntuar = canje.rating === 0;
     return (
         <button
             onClick={onClick}
-            className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-150 active:scale-[0.99] overflow-hidden"
+            className={`w-full text-left bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 active:scale-[0.99] overflow-hidden border-2
+                ${sinPuntuar
+                    ? "border-amber-300 border-dashed"
+                    : "border-gray-100"
+                }`}
         >
-            {/* Top */}
+            {/* Top row: avatar + name + badge */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-200 flex items-center justify-center font-black text-emerald-700 text-sm flex-shrink-0">
                     {canje.usuarioAvatar}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="font-black text-gray-900 text-sm truncate">{canje.usuarioNombre}</p>
-                    <p className="text-xs text-gray-400">{canje.usuarioCiudad}</p>
+                    <p className="text-xs text-gray-400 truncate">{canje.usuarioCiudad}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
-                        ✅ Realizado
-                    </span>
-                    <StarDisplay value={canje.rating} />
+                    {sinPuntuar ? (
+                        <span className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 uppercase tracking-wide whitespace-nowrap">
+                            ⭐ Sin puntuar
+                        </span>
+                    ) : (
+                        <>
+                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
+                                ✅ Realizado
+                            </span>
+                            <StarDisplay value={canje.rating} />
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Stickers + date */}
+            {/* Trade summary — compact single row, always fits mobile */}
             <div className="px-4 py-3 flex items-center gap-2">
+                {/* Recibiste */}
                 <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-black text-sky-500 uppercase tracking-wide mb-1">Recibiste</p>
+                    <p className="text-[9px] font-black text-sky-500 uppercase tracking-wide mb-1.5">Recibiste</p>
                     <div className="flex flex-wrap gap-1">
-                        {canje.figuritasRecibidas.slice(0, 2).map(id => (
-                            <StickerPill key={id} id={id} color="sky" />
-                        ))}
-                        {canje.figuritasRecibidas.length > 2 && (
-                            <span className="text-[11px] text-gray-400 font-semibold">+{canje.figuritasRecibidas.length - 2}</span>
+                        {canje.figuritasRecibidas.slice(0, 4).map(id => {
+                            const fig = FIGURITAS_MAP[id];
+                            return (
+                                <span key={id} className="inline-flex items-center gap-0.5 bg-sky-100 text-sky-700 border border-sky-200 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+                                    {FLAG[fig?.pais] || "🌍"}<span>#{fig?.numero ?? id}</span>
+                                </span>
+                            );
+                        })}
+                        {canje.figuritasRecibidas.length > 4 && (
+                            <span className="text-[10px] text-gray-400 font-bold self-center">+{canje.figuritasRecibidas.length - 4}</span>
                         )}
                     </div>
                 </div>
 
+                {/* Divider arrow */}
                 <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
 
+                {/* Entregaste */}
                 <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-wide mb-1">Entregaste</p>
+                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-wide mb-1.5">Entregaste</p>
                     <div className="flex flex-wrap gap-1">
-                        {canje.figuritasEntregadas.slice(0, 2).map(id => (
-                            <StickerPill key={id} id={id} color="amber" />
-                        ))}
-                        {canje.figuritasEntregadas.length > 2 && (
-                            <span className="text-[11px] text-gray-400 font-semibold">+{canje.figuritasEntregadas.length - 2}</span>
+                        {canje.figuritasEntregadas.slice(0, 4).map(id => {
+                            const fig = FIGURITAS_MAP[id];
+                            return (
+                                <span key={id} className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+                                    {FLAG[fig?.pais] || "🌍"}<span>#{fig?.numero ?? id}</span>
+                                </span>
+                            );
+                        })}
+                        {canje.figuritasEntregadas.length > 4 && (
+                            <span className="text-[10px] text-gray-400 font-bold self-center">+{canje.figuritasEntregadas.length - 4}</span>
                         )}
                     </div>
                 </div>
-
-                <svg className="w-4 h-4 text-gray-300 flex-shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
             </div>
 
-            {/* Date + location footer */}
-            <div className="px-4 pb-3 flex items-center gap-2">
-                <span className="text-gray-300">|</span>
+            {/* Footer: location + date */}
+            <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
                 <span className="text-[11px] text-gray-400">📍 {canje.lugar}</span>
                 <span className="text-gray-300">·</span>
                 <span className="text-[11px] text-gray-400">{timeAgo(canje.fecha)}</span>
             </div>
+
+            {/* CTA banner when unrated */}
+            {sinPuntuar && (
+                <div className="mx-4 mb-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-center justify-between">
+                    <p className="text-xs text-amber-700 font-bold">¿Cómo salió el intercambio?</p>
+                    <span className="text-xs font-black text-amber-600 flex items-center gap-1">
+                        Puntuar <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                </div>
+            )}
         </button>
     );
 }
 
+// ─── Interactive star picker ─────────────────────────────────────────────────
+function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+    const [hover, setHover] = useState(0);
+    return (
+        <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map(n => (
+                <button
+                    key={n}
+                    type="button"
+                    onMouseEnter={() => setHover(n)}
+                    onMouseLeave={() => setHover(0)}
+                    onClick={() => onChange(n)}
+                    className="transition-transform active:scale-90"
+                >
+                    <svg
+                        className={`w-9 h-9 transition-colors ${n <= (hover || value) ? "text-amber-400" : "text-gray-200"
+                            }`}
+                        viewBox="0 0 24 24" fill="currentColor"
+                    >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+            ))}
+        </div>
+    );
+}
+
 // ─── Historial Detail Modal ────────────────────────────────────────────────────
-function HistorialDetailModal({ canje, onClose }: { canje: CanjeHistorial; onClose: () => void }) {
+function HistorialDetailModal({ canje, onClose, onRated }: {
+    canje: CanjeHistorial;
+    onClose: () => void;
+    onRated: (id: string, rating: number) => void;
+}) {
+    const sinPuntuar = canje.rating === 0;
+    const [localRating, setLocalRating] = useState(canje.rating);
+    const [guardado, setGuardado] = useState(false);
+
+    const handleGuardar = () => {
+        if (localRating === 0) return;
+        onRated(canje.id, localRating);
+        setGuardado(true);
+    };
+
     return (
         <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center px-0 sm:px-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -215,13 +287,18 @@ function HistorialDetailModal({ canje, onClose }: { canje: CanjeHistorial; onClo
                 <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden flex-shrink-0" />
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-5 pt-5 pb-5 flex-shrink-0">
+                <div className={`px-5 pt-5 pb-5 flex-shrink-0 ${sinPuntuar && !guardado
+                    ? "bg-gradient-to-r from-amber-400 to-yellow-500"
+                    : "bg-gradient-to-r from-emerald-500 to-teal-600"
+                    }`}>
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center font-black text-white text-base ring-2 ring-white/30 flex-shrink-0">
                             {canje.usuarioAvatar}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-white/70 text-xs font-medium">Canje realizado con</p>
+                            <p className="text-white/70 text-xs font-medium">
+                                {sinPuntuar && !guardado ? "Puntuar canje con" : "Canje realizado con"}
+                            </p>
                             <h2 className="text-white font-black text-lg leading-tight truncate">{canje.usuarioNombre}</h2>
                             <p className="text-white/60 text-xs">{canje.usuarioCiudad}</p>
                         </div>
@@ -254,14 +331,49 @@ function HistorialDetailModal({ canje, onClose }: { canje: CanjeHistorial; onClo
 
                 {/* Body */}
                 <div className="overflow-y-auto px-5 py-5 flex flex-col gap-4">
-                    {/* Rating */}
-                    <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3">
-                        <span className="text-3xl">{RATING_LABELS[canje.rating].emoji}</span>
-                        <div>
-                            <p className="font-black text-gray-900 text-sm">Tu puntuación: {RATING_LABELS[canje.rating].text}</p>
-                            <StarDisplay value={canje.rating} />
+
+                    {/* Rating section */}
+                    {sinPuntuar && !guardado ? (
+                        /* ── Interactive rating picker ── */
+                        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl px-4 py-4 flex flex-col items-center gap-3">
+                            <p className="font-black text-gray-900 text-sm text-center">¿Cómo fue el intercambio?</p>
+                            <StarPicker value={localRating} onChange={setLocalRating} />
+                            {localRating > 0 && (
+                                <div className="flex items-center gap-2 animate-fade-in">
+                                    <span className="text-2xl">{RATING_LABELS[localRating].emoji}</span>
+                                    <span className="font-black text-gray-800 text-sm">{RATING_LABELS[localRating].text}</span>
+                                </div>
+                            )}
+                            <button
+                                onClick={handleGuardar}
+                                disabled={localRating === 0}
+                                className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.98] ${localRating > 0
+                                    ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-900 shadow-md shadow-amber-200"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    }`}
+                            >
+                                Guardar puntuación ⭐
+                            </button>
                         </div>
-                    </div>
+                    ) : guardado ? (
+                        /* ── Saved confirmation ── */
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <span className="text-3xl">{RATING_LABELS[localRating].emoji}</span>
+                            <div>
+                                <p className="font-black text-emerald-800 text-sm">¡Puntuación guardada!</p>
+                                <StarDisplay value={localRating} />
+                            </div>
+                        </div>
+                    ) : (
+                        /* ── Read-only rating ── */
+                        <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <span className="text-3xl">{RATING_LABELS[canje.rating].emoji}</span>
+                            <div>
+                                <p className="font-black text-gray-900 text-sm">Tu puntuación: {RATING_LABELS[canje.rating].text}</p>
+                                <StarDisplay value={canje.rating} />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Figuritas breakdown */}
                     <div className="flex gap-3">
@@ -346,7 +458,19 @@ function HistorialDetailModal({ canje, onClose }: { canje: CanjeHistorial; onClo
 
 // ─── Historial Sheet ──────────────────────────────────────────────────────────
 function HistorialSheet({ onClose }: { onClose: () => void }) {
+    const [historial, setHistorial] = useState<CanjeHistorial[]>(HISTORIAL_MOCK);
     const [selectedCanje, setSelectedCanje] = useState<CanjeHistorial | null>(null);
+
+    const handleRated = (id: string, rating: number) => {
+        setHistorial(prev => prev.map(c => c.id === id ? { ...c, rating } : c));
+        // also update selectedCanje so the modal reflects the new rating
+        setSelectedCanje(prev => prev?.id === id ? { ...prev, rating } : prev);
+    };
+
+    const rated = historial.filter(c => c.rating > 0);
+    const avgRating = rated.length > 0
+        ? (rated.reduce((acc, c) => acc + c.rating, 0) / rated.length).toFixed(1)
+        : "—";
 
     return (
         <>
@@ -359,7 +483,7 @@ function HistorialSheet({ onClose }: { onClose: () => void }) {
                     <div className="px-5 pt-4 pb-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
                         <div>
                             <h2 className="font-black text-gray-900 text-lg">📚 Historial de canjes</h2>
-                            <p className="text-xs text-gray-400 mt-0.5">{HISTORIAL_MOCK.length} intercambios completados</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{historial.length} intercambios completados</p>
                         </div>
                         <button
                             onClick={onClose}
@@ -374,35 +498,33 @@ function HistorialSheet({ onClose }: { onClose: () => void }) {
                     {/* Stats strip */}
                     <div className="flex gap-0 border-b border-gray-100 flex-shrink-0">
                         <div className="flex-1 text-center py-3">
-                            <p className="font-black text-emerald-600 text-xl">{HISTORIAL_MOCK.length}</p>
+                            <p className="font-black text-emerald-600 text-xl">{historial.length}</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Canjes</p>
                         </div>
                         <div className="w-px bg-gray-100" />
                         <div className="flex-1 text-center py-3">
                             <p className="font-black text-sky-600 text-xl">
-                                {HISTORIAL_MOCK.reduce((acc, c) => acc + c.figuritasRecibidas.length, 0)}
+                                {historial.reduce((acc, c) => acc + c.figuritasRecibidas.length, 0)}
                             </p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Recibidas</p>
                         </div>
                         <div className="w-px bg-gray-100" />
                         <div className="flex-1 text-center py-3">
                             <p className="font-black text-amber-500 text-xl">
-                                {HISTORIAL_MOCK.reduce((acc, c) => acc + c.figuritasEntregadas.length, 0)}
+                                {historial.reduce((acc, c) => acc + c.figuritasEntregadas.length, 0)}
                             </p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Entregadas</p>
                         </div>
                         <div className="w-px bg-gray-100" />
                         <div className="flex-1 text-center py-3">
-                            <p className="font-black text-amber-400 text-xl">
-                                {(HISTORIAL_MOCK.reduce((acc, c) => acc + c.rating, 0) / HISTORIAL_MOCK.length).toFixed(1)} ⭐
-                            </p>
+                            <p className="font-black text-amber-400 text-xl">{avgRating} ⭐</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Promedio</p>
                         </div>
                     </div>
 
                     {/* Cards list */}
                     <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-                        {HISTORIAL_MOCK.map(canje => (
+                        {historial.map(canje => (
                             <HistorialCard
                                 key={canje.id}
                                 canje={canje}
@@ -418,6 +540,7 @@ function HistorialSheet({ onClose }: { onClose: () => void }) {
                 <HistorialDetailModal
                     canje={selectedCanje}
                     onClose={() => setSelectedCanje(null)}
+                    onRated={handleRated}
                 />
             )}
         </>

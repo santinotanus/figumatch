@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Baloo_2 } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
@@ -9,6 +9,12 @@ const baloo2 = Baloo_2({
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-baloo-2"
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "FiguMatch – Intercambiá figuritas del Mundial",
