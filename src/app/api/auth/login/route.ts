@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     if (!usuario) {
         // Todas las figuritas del álbum (00 al 980) como faltantes por default
-        const todasFaltantes = Array.from({ length: 981 }, (_, i) => i);
+        const todasFaltantes = Array.from({ length: 981 }, (_, i) => i.toString());
 
         const creado = await UsuarioModel.create({
             googleId: uid,
@@ -40,7 +40,6 @@ export async function POST(req: Request) {
             faltantes: todasFaltantes,
         });
         usuario = creado.toObject();
-        // @ts-expect-error password no existe en el objeto creado
         delete usuario.password;
         return NextResponse.json({ usuario, nuevo: true }, { status: 201 });
     }

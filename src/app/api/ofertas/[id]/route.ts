@@ -122,7 +122,7 @@ export async function PATCH(
         // Aplicar el rating a la reputación del otro usando cantidadRatings
         const idParaOtro = soyRemitente ? String(ofertaActual.destinatarioId) : remId;
         if (ratingDado > 0) {
-            const usuOtro = await UsuarioModel.findById(idParaOtro).select("reputacion cantidadRatings").lean() as Record<string, unknown>;
+            const usuOtro = await UsuarioModel.findById(idParaOtro).select("reputacion cantidadRatings").lean() as { reputacion?: number; cantidadRatings?: number } | null;
             const repActual = Number(usuOtro?.reputacion) || 0;
             const cantActual = Number(usuOtro?.cantidadRatings) || 0;
             const nuevaRep = Math.round(((repActual * cantActual + ratingDado) / (cantActual + 1)) * 10) / 10;
@@ -215,8 +215,8 @@ export async function PATCH(
 
             // Leer datos actuales de ambos usuarios ANTES de modificarlos
             const [usuMi, usuOtro] = await Promise.all([
-                UsuarioModel.findById(idParaMi).select("reputacion cantidadRatings").lean() as Promise<Record<string, unknown>>,
-                UsuarioModel.findById(idParaOtro).select("reputacion cantidadRatings").lean() as Promise<Record<string, unknown>>,
+                UsuarioModel.findById(idParaMi).select("reputacion cantidadRatings").lean() as { reputacion?: number; cantidadRatings?: number } | null,
+                UsuarioModel.findById(idParaOtro).select("reputacion cantidadRatings").lean() as { reputacion?: number; cantidadRatings?: number } | null,
             ]);
 
             // Calcular nueva reputación inline (promedio ponderado solo sobre ratings reales)
@@ -230,7 +230,7 @@ export async function PATCH(
             if (ratingParaMi > 0) {
                 await UsuarioModel.findByIdAndUpdate(idParaMi, {
                     $inc: { cambiosHechos: 1, cantidadRatings: 1 },
-                    $set: { reputacion: calcRep(usuMi, ratingParaMi) },
+                    $set: { reputacion: calcRep(usuMi ?? {}, ratingParaMi) },
                 });
             } else {
                 await UsuarioModel.findByIdAndUpdate(idParaMi, { $inc: { cambiosHechos: 1 } });
@@ -240,7 +240,7 @@ export async function PATCH(
             if (ratingDado > 0) {
                 await UsuarioModel.findByIdAndUpdate(idParaOtro, {
                     $inc: { cambiosHechos: 1, cantidadRatings: 1 },
-                    $set: { reputacion: calcRep(usuOtro, ratingDado) },
+                    $set: { reputacion: calcRep(usuOtro ?? {}, ratingDado) },
                 });
             } else {
                 await UsuarioModel.findByIdAndUpdate(idParaOtro, { $inc: { cambiosHechos: 1 } });
@@ -284,4 +284,3 @@ export async function DELETE(
     await OfertaModel.findByIdAndDelete(id);
     return NextResponse.json({ ok: true });
 }
-
