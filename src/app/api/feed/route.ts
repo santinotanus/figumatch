@@ -10,8 +10,9 @@ export async function GET(req: Request) {
 
     if (!usuarioId) return NextResponse.json({ error: "usuarioId requerido" }, { status: 400 });
 
-    const yo = await UsuarioModel.findById(usuarioId).lean();
-    if (!yo) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    const yoDoc = await UsuarioModel.findById(usuarioId);
+    if (!yoDoc) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    const yo = yoDoc.toObject();
 
     // En MongoDB las figuritas están guardadas como strings ("10", "24", etc.)
     // Filtramos solo las numéricas (descartamos "FIG-34", "FRA-ESC", etc.)
@@ -78,4 +79,3 @@ export async function GET(req: Request) {
 
     return NextResponse.json(matches);
 }
-

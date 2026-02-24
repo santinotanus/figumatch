@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models, Document, Model } from "mongoose";
 
 // ─── Figurita ────────────────────────────────────────────────────────────────
 const FiguriteSchema = new Schema({
@@ -13,7 +13,27 @@ export const FiguriteModel =
     models.Figurite || model("Figurite", FiguriteSchema);
 
 // ─── Usuario ─────────────────────────────────────────────────────────────────
-const UsuarioSchema = new Schema(
+export interface IUsuarioDoc extends Document {
+    nombre: string;
+    email: string;
+    password?: string;
+    googleId?: string;
+    ciudad?: string;
+    avatar?: string;
+    foto?: string;
+    premium?: boolean;
+    repetidas: string[];
+    faltantes: string[];
+    zonas?: string[];
+    especiales?: Map<string, number>;
+    reputacion?: number;
+    cambiosHechos?: number;
+    cantidadRatings?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+const UsuarioSchema = new Schema<IUsuarioDoc>(
     {
         nombre:        { type: String, required: true },
         email:         { type: String, required: true, unique: true, lowercase: true },
@@ -34,10 +54,10 @@ const UsuarioSchema = new Schema(
     { timestamps: true }
 );
 
-export const UsuarioModel =
+export const UsuarioModel: Model<IUsuarioDoc> =
     process.env.NODE_ENV === "development"
-        ? (() => { delete (mongoose.models as Record<string, unknown>).Usuario; return model("Usuario", UsuarioSchema); })()
-        : (models.Usuario || model("Usuario", UsuarioSchema));
+        ? (() => { delete (mongoose.models as Record<string, unknown>).Usuario; return model<IUsuarioDoc>("Usuario", UsuarioSchema); })()
+        : (models.Usuario as Model<IUsuarioDoc>) || model<IUsuarioDoc>("Usuario", UsuarioSchema);
 
 // ─── Oferta ───────────────────────────────────────────────────────────────────
 const EncuentroSchema = new Schema(
