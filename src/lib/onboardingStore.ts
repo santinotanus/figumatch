@@ -6,7 +6,10 @@ const KEY = "figumatch_onboarding";
 
 export interface OnboardingData {
     onboarding_completed: boolean;
+    mongoId?: string;   // _id del usuario en MongoDB
+    firebaseUid?: string; // uid de Firebase
     nombre?: string;
+    email?: string;
     foto?: string; // base64 data URL
     repetidas?: string[]; // figurita IDs
     faltantes?: string[]; // figurita IDs

@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { MI_USUARIO } from "@/lib/mockData";
-import { getOfertas } from "@/lib/ofertasStore";
+import { useOfertasPendientes } from "@/lib/useOfertasPendientes";
 
 const NAV_ITEMS = [
     {
@@ -51,12 +50,12 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const pendingCount = getOfertas().filter(o => o.estado === "pendiente_yo").length;
+    const pendingCount = useOfertasPendientes();
 
     return (
         <aside className="hidden lg:flex flex-col w-64 xl:w-72 fixed top-0 left-0 h-screen bg-white border-r border-gray-100 z-40 px-4 py-6">
             {/* Logo */}
-            <Link href="/" className="flex items-center -mb-2 px-0">
+            <Link href="/feed" className="flex items-center -mb-2 px-0">
                 <Image
                     src="/logo.png"
                     alt="FiguMatch"

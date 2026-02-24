@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { completeOnboarding } from "@/lib/onboardingStore";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -198,13 +200,17 @@ function NumberInput({
     );
 }
 
-// ─── Step 1: Profile ──────────────────────────────────────────────────────────
-function StepPerfil({ nombre, foto, onNombre, onFoto, onNext }: {
+// ─── Step 1: Auth + Profile ───────────────────────────────────────────────────
+function StepPerfil({ nombre, foto, email, password, useGoogle, firebaseEmail, loading, onNombre, onFoto, onEmail, onPassword, onGoogle, onNext }: {
     nombre: string; foto: string;
+    email: string; password: string;
+    useGoogle: boolean; firebaseEmail: string; loading: boolean;
     onNombre: (v: string) => void; onFoto: (v: string) => void;
+    onEmail: (v: string) => void; onPassword: (v: string) => void;
+    onGoogle: () => void;
     onNext: () => void;
 }) {
-    const [error, setError] = useState("");
+    const [showPass, setShowPass] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,51 +221,124 @@ function StepPerfil({ nombre, foto, onNombre, onFoto, onNext }: {
         reader.readAsDataURL(file);
     };
 
-    const handleNext = () => {
-        if (!nombre.trim()) { setError("El nombre es obligatorio para continuar."); return; }
-        setError(""); onNext();
-    };
-
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-3">
-                <button type="button" onClick={() => fileRef.current?.click()}
-                    className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-sky-100 hover:border-sky-300 transition-all group shadow-sm">
+        <div className="flex flex-col gap-5">
+            {/* Google button */}
+            {!useGoogle && (
+                <button type="button" onClick={onGoogle} disabled={loading}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all active:scale-[0.98] shadow-sm disabled:opacity-60">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    <span className="font-bold text-gray-700 text-sm">Registrarse con Google</span>
+                </button>
+            )}
+
+            {useGoogle && (
+                <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
                     {foto ? (
-                        <Image src={foto} alt="Foto de perfil" fill className="object-cover" />
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={foto} alt="Foto de Google" className="w-10 h-10 rounded-full object-cover flex-none" referrerPolicy="no-referrer" />
+                    ) : (
+                        <span className="text-emerald-600 text-lg">✅</span>
+                    )}
+                    <div>
+                        <p className="text-sm font-bold text-emerald-700">Conectado con Google</p>
+                        <p className="text-xs text-emerald-600">{firebaseEmail || nombre}</p>
+                    </div>
+                </div>
+            )}
+
+            {!useGoogle && (
+                <>
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">o con email</span>
+                        <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+
+                    {/* Email */}
+                    <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </span>
+                        <input type="email" placeholder="Correo electrónico" value={email}
+                            onChange={e => onEmail(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all bg-gray-50 focus:bg-white" />
+                    </div>
+
+                    {/* Password */}
+                    <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </span>
+                        <input type={showPass ? "text" : "password"} placeholder="Contraseña (mín. 6 caracteres)" value={password}
+                            onChange={e => onPassword(e.target.value)}
+                            className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all bg-gray-50 focus:bg-white" />
+                        <button type="button" onClick={() => setShowPass(v => !v)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                            {showPass ? (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            ) : (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* Nombre */}
+            <div>
+                <label className="text-sm font-bold text-gray-700 block mb-1.5">
+                    Tu nombre <span className="text-red-400">*</span>
+                </label>
+                <input type="text" value={nombre} onChange={e => onNombre(e.target.value)}
+                    placeholder="Ej: Juan Pérez" maxLength={40}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium bg-white transition-all outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100" />
+                <p className="text-xs text-gray-400 mt-1.5">Este nombre será visible cuando hagas ofertas de intercambio.</p>
+            </div>
+
+            {/* Foto */}
+            <div className="flex items-center gap-4">
+                <button type="button" onClick={() => fileRef.current?.click()}
+                    className="relative w-16 h-16 rounded-full overflow-hidden border-4 border-sky-100 hover:border-sky-300 transition-all group shadow-sm flex-none">
+                    {foto ? (
+                        <Image src={foto} alt="Foto" fill className="object-cover" />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">Cambiar</span>
-                    </div>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                 <p className="text-xs text-gray-400 font-medium">Foto de perfil (opcional)</p>
             </div>
 
-            <div>
-                <label className="text-sm font-bold text-gray-700 block mb-1.5">
-                    Tu nombre <span className="text-red-400">*</span>
-                </label>
-                <input
-                    type="text" value={nombre} onChange={e => { onNombre(e.target.value); setError(""); }}
-                    placeholder="Ej: Juan Pérez" maxLength={40}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm font-medium bg-white transition-all outline-none
-                        ${error ? "border-red-300 bg-red-50" : "border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"}`}
-                />
-                {error && <p className="text-red-500 text-xs font-semibold mt-1.5">{error}</p>}
-                <p className="text-xs text-gray-400 mt-2">Este nombre será visible cuando hagas ofertas de intercambio.</p>
-            </div>
-
-            <button onClick={handleNext}
-                className="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-black py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-md shadow-sky-200">
-                Continuar →
+            <button onClick={onNext} disabled={loading}
+                className="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-black py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-md shadow-sky-200 disabled:opacity-60 flex items-center justify-center gap-2">
+                {loading ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                ) : "Continuar →"}
             </button>
         </div>
     );
@@ -436,8 +515,7 @@ function StepZonas({ zonas, onZonas, onFinish, onBack, loading }: {
 
 // ─── Step labels ──────────────────────────────────────────────────────────────
 const STEP_LABELS = [
-    { title: "Tu perfil", subtitle: "¿Cómo querés que te vean?" },
-    { title: "Tu álbum", subtitle: "¿Cuáles tenés y cuáles te faltan?" },
+    { title: "Tu cuenta", subtitle: "Creá tu usuario en FiguMatch" },
     { title: "Tu zona", subtitle: "¿Dónde querés intercambiar?" },
 ];
 
@@ -446,30 +524,144 @@ export default function OnboardingPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [authError, setAuthError] = useState("");
 
-    // Step 1
+    // Step 1 — auth + perfil
     const [nombre, setNombre] = useState("");
     const [foto, setFoto] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [useGoogle, setUseGoogle] = useState(false);
+    const [firebaseUid, setFirebaseUid] = useState("");
+    const [firebaseEmail, setFirebaseEmail] = useState("");
 
-    // Step 2 — now number arrays
-    const [repetidas, setRepetidas] = useState<number[]>([]);
-    const [faltantes, setFaltantes] = useState<number[]>([]);
-
-    // Step 3
+    // Step 2
     const [zonas, setZonas] = useState<string[]>([]);
+
+    // ── Paso 1: crear cuenta en Firebase ─────────────────────────────────────
+    const handleStep1Next = useCallback(async () => {
+        if (!nombre.trim()) { setAuthError("El nombre es obligatorio."); return; }
+        setAuthError("");
+        setLoading(true);
+        try {
+            if (useGoogle) {
+                setStep(2);
+            } else {
+                if (!email || !password) { setAuthError("Ingresá email y contraseña."); setLoading(false); return; }
+                if (password.length < 6) { setAuthError("La contraseña debe tener al menos 6 caracteres."); setLoading(false); return; }
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(cred.user, { displayName: nombre });
+                setFirebaseUid(cred.user.uid);
+                setFirebaseEmail(cred.user.email ?? email);
+                setStep(2);
+            }
+        } catch (err: unknown) {
+            const code = (err as { code?: string })?.code;
+            if (code === "auth/email-already-in-use") {
+                setAuthError("Ese email ya está registrado. ¿Querés iniciar sesión?");
+            } else if (code === "auth/invalid-email") {
+                setAuthError("El email no es válido.");
+            } else {
+                setAuthError("Error al crear la cuenta. Intentá de nuevo.");
+            }
+        }
+        setLoading(false);
+    }, [nombre, email, password, useGoogle]);
+
+    // ── Continuar con Google en onboarding ────────────────────────────────────
+    const handleGoogleOnboarding = useCallback(async () => {
+        setAuthError("");
+        setLoading(true);
+        try {
+            const cred = await signInWithPopup(auth, googleProvider);
+            const u = cred.user;
+
+            // Sincronizar con MongoDB
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    uid: u.uid,
+                    email: u.email ?? "",
+                    nombre: u.displayName ?? "",
+                    foto: u.photoURL ?? "",
+                }),
+            });
+            const { usuario, nuevo } = await res.json();
+
+            // Si ya tiene cuenta completa → directo al feed
+            if (!nuevo && usuario.zonas?.length > 0) {
+                completeOnboarding({
+                    mongoId: usuario._id,
+                    firebaseUid: u.uid,
+                    nombre: usuario.nombre,
+                    email: usuario.email,
+                    foto: usuario.foto,
+                    repetidas: usuario.repetidas,
+                    faltantes: usuario.faltantes,
+                    zonas: usuario.zonas,
+                });
+                router.push("/feed");
+                return;
+            }
+
+            // Si es nuevo → pre-cargar datos de Google y continuar onboarding
+            setFirebaseUid(u.uid);
+            setFirebaseEmail(u.email ?? "");
+            setNombre(u.displayName ?? "");
+            setFoto(u.photoURL ?? "");
+            setUseGoogle(true);
+            // Si ya existe en mongo pero sin zonas, guardar su mongoId
+            if (!nuevo) {
+                // pre-cargar mongoId para el PATCH final
+                setFirebaseUid(u.uid);
+            }
+        } catch (err: unknown) {
+            const code = (err as { code?: string })?.code;
+            if (code !== "auth/popup-closed-by-user") {
+                setAuthError("Error al conectar con Google. Intentá de nuevo.");
+            }
+        }
+        setLoading(false);
+    }, [router]);
 
     const handleFinish = useCallback(async () => {
         setLoading(true);
-        await new Promise(r => setTimeout(r, 800));
-        completeOnboarding({
-            nombre,
-            foto,
-            repetidas: repetidas.map(n => String(n)),
-            faltantes: faltantes.map(n => String(n)),
-            zonas,
-        });
-        router.push("/feed");
-    }, [nombre, foto, repetidas, faltantes, zonas, router]);
+        try {
+            const uid = firebaseUid;
+            const userEmail = firebaseEmail || email;
+
+            // Crear/buscar usuario en MongoDB — el API ya le asigna las 981 figuritas como faltantes
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid, email: userEmail, nombre, foto }),
+            });
+            const { usuario } = await res.json();
+
+            // Guardar zonas y foto en el perfil
+            await fetch(`/api/usuarios/${usuario._id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nombre, foto, zonas }),
+            });
+
+            completeOnboarding({
+                mongoId: usuario._id,
+                firebaseUid: uid,
+                nombre,
+                email: userEmail,
+                foto,
+                repetidas: [],
+                faltantes: [],
+                zonas,
+            });
+            router.push("/feed");
+        } catch {
+            setAuthError("Error al guardar tus datos. Intentá de nuevo.");
+            setLoading(false);
+        }
+    }, [firebaseUid, firebaseEmail, email, nombre, foto, zonas, router]);
 
     const label = STEP_LABELS[step - 1];
 
@@ -484,7 +676,7 @@ export default function OnboardingPage() {
                 <div className="bg-gradient-to-r from-sky-500 to-sky-600 px-6 pt-7 pb-5">
                     <div className="flex items-center justify-between mb-4">
                         <Image src="/logo.png" alt="FiguMatch" width={140} height={45} className="h-10 w-auto object-contain" priority />
-                        <StepIndicator current={step} total={3} />
+                        <StepIndicator current={step} total={2} />
                     </div>
                     <h1 className="text-white text-xl font-black">{label.title}</h1>
                     <p className="text-sky-100 text-sm mt-0.5">{label.subtitle}</p>
@@ -492,24 +684,28 @@ export default function OnboardingPage() {
 
                 {/* Step content */}
                 <div className="px-6 py-6">
+                    {/* Error de auth */}
+                    {authError && (
+                        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-600 font-semibold">
+                            ⚠️ {authError}
+                        </div>
+                    )}
                     {step === 1 && (
                         <StepPerfil
                             nombre={nombre} foto={foto}
+                            email={email} password={password}
+                            useGoogle={useGoogle} firebaseEmail={firebaseEmail}
+                            loading={loading}
                             onNombre={setNombre} onFoto={setFoto}
-                            onNext={() => setStep(2)}
+                            onEmail={setEmail} onPassword={setPassword}
+                            onGoogle={handleGoogleOnboarding}
+                            onNext={handleStep1Next}
                         />
                     )}
                     {step === 2 && (
-                        <StepFiguritas
-                            repetidas={repetidas} faltantes={faltantes}
-                            onRepetidas={setRepetidas} onFaltantes={setFaltantes}
-                            onNext={() => setStep(3)} onBack={() => setStep(1)}
-                        />
-                    )}
-                    {step === 3 && (
                         <StepZonas
                             zonas={zonas} onZonas={setZonas}
-                            onFinish={handleFinish} onBack={() => setStep(2)}
+                            onFinish={handleFinish} onBack={() => setStep(1)}
                             loading={loading}
                         />
                     )}

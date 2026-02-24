@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getOfertas } from "@/lib/ofertasStore";
+import { useOfertasPendientes } from "@/lib/useOfertasPendientes";
 
 const NAV_ITEMS = [
     {
@@ -49,7 +49,7 @@ const NAV_ITEMS = [
 
 export default function BottomNav() {
     const pathname = usePathname();
-    const pendingCount = getOfertas().filter(o => o.estado === "pendiente_yo").length;
+    const pendingCount = useOfertasPendientes();
 
     return (
         <nav className="
