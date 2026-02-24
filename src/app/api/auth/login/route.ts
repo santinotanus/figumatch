@@ -18,8 +18,11 @@ export async function POST(req: Request) {
 
     // Buscar por googleId (uid de Firebase) o por email
     let usuario = await UsuarioModel.findOne({
-        $or: [{ googleId: uid }, { email: email.toLowerCase() }],
-    }).select("-password").lean();
+        $or: [
+            { googleId: uid },
+            { email: email.toLowerCase() }
+        ]
+    } as any).select("-password").lean();
 
     if (!usuario) {
         // Todas las figuritas del álbum (00 al 980) como faltantes por default
